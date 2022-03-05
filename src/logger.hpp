@@ -1,5 +1,10 @@
 #pragma once
 
+//!REMOVE THIS DEFINE BEFORE SHIPPING
+#define LOGGING
+
+#ifdef LOGGING
+
 #include <cstdio>
 #include <ctime>
 #include <mutex>
@@ -41,74 +46,74 @@ public:
     }
 
     template<typename... Args>
-    static void Trace(const char* message, Args... args)
+    static void trace(const char* message, Args... args)
     {
         get_instance().log("[Trace]\t", LogPriority::TRACE, message, args...);
     }
 
     template<typename... Args>
-    static void Debug(const char* message, Args... args)
+    static void debug(const char* message, Args... args)
     {
         get_instance().log("[Debug]\t", LogPriority::DEBUG, message, args...);
     }
 
     template<typename... Args>
-    static void Info(const char* message, Args... args)
+    static void info(const char* message, Args... args)
     {
         get_instance().log("[Info]\t", LogPriority::INFO, message, args...);
     }
 
     template<typename... Args>
-    static void Warn(const char* message, Args... args)
+    static void warn(const char* message, Args... args)
     {
         get_instance().log("[Warn]\t", LogPriority::WARN, message, args...);
     }
 
     template<typename... Args>
-    static void Error(const char* message, Args... args)
+    static void error(const char* message, Args... args)
     {
         get_instance().log("[Error]\t", LogPriority::ERROR, message, args...);
     }
 
     template<typename... Args>
-    static void Critical(const char* message, Args... args)
+    static void critical(const char* message, Args... args)
     {
         get_instance().log("[Critical]\t", LogPriority::CRITICAL, message, args...);
     }
 
 
     template<typename... Args>
-    static void Trace(int line, const char* source_file, const char* message, Args... args)
+    static void trace(int line, const char* source_file, const char* message, Args... args)
     {
         get_instance().log(line, source_file, "[Trc]\t", LogPriority::TRACE, message, args...);
     }
 
     template<typename... Args>
-    static void Debug(int line, const char* source_file, const char* message, Args... args)
+    static void debug(int line, const char* source_file, const char* message, Args... args)
     {
         get_instance().log(line, source_file, "[Dbg]\t", LogPriority::DEBUG, message, args...);
     }
 
     template<typename... Args>
-    static void Info(int line, const char* source_file, const char* message, Args... args)
+    static void info(int line, const char* source_file, const char* message, Args... args)
     {
         get_instance().log(line, source_file, "[Info]\t", LogPriority::INFO, message, args...);
     }
 
     template<typename... Args>
-    static void Warn(int line, const char* source_file, const char* message, Args... args)
+    static void warn(int line, const char* source_file, const char* message, Args... args)
     {
         get_instance().log(line, source_file, "[Warn]\t", LogPriority::WARN, message, args...);
     }
 
     template<typename... Args>
-    static void Error(int line, const char* source_file, const char* message, Args... args)
+    static void error(int line, const char* source_file, const char* message, Args... args)
     {
         get_instance().log(line, source_file, "[Err]\t", LogPriority::ERROR, message, args...);
     }
 
     template<typename... Args>
-    static void Critical(int line, const char* source_file, const char* message, Args... args)
+    static void critical(int line, const char* source_file, const char* message, Args... args)
     {
         get_instance().log(line, source_file, "[Crit]\t", LogPriority::CRITICAL, message, args...);
     }
@@ -216,9 +221,18 @@ private:
 
 };
 
-#define LOG_TRACE(Message, ...) (Logger::Trace(__LINE__, __FILE__, Message, __VA_ARGS__))
-#define LOG_DEBUG(Message, ...) (Logger::Debug(__LINE__, __FILE__, Message, __VA_ARGS__))
-#define LOG_INFO(Message, ...) (Logger::Info(__LINE__, __FILE__, Message, __VA_ARGS__))
-#define LOG_WARN(Message, ...) (Logger::Warn(__LINE__, __FILE__, Message, __VA_ARGS__))
-#define LOG_ERROR(Message, ...) (Logger::Error(__LINE__, __FILE__, Message, __VA_ARGS__))
-#define LOG_CRITICAL(Message, ...) (Logger::Critical(__LINE__, __FILE__, Message, __VA_ARGS__))
+#define LOG_TRACE(Message, ...) (Logger::trace(__LINE__, __FILE__, Message, __VA_ARGS__))
+#define LOG_DEBUG(Message, ...) (Logger::debug(__LINE__, __FILE__, Message, __VA_ARGS__))
+#define LOG_INFO(Message, ...) (Logger::info(__LINE__, __FILE__, Message, __VA_ARGS__))
+#define LOG_WARN(Message, ...) (Logger::warn(__LINE__, __FILE__, Message, __VA_ARGS__))
+#define LOG_ERROR(Message, ...) (Logger::error(__LINE__, __FILE__, Message, __VA_ARGS__))
+#define LOG_CRITICAL(Message, ...) (Logger::critical(__LINE__, __FILE__, Message, __VA_ARGS__))
+#else
+#define LOG_TRACE(Message, ...)
+#define LOG_DEBUG(Message, ...)
+#define LOG_INFO(Message, ...)
+#define LOG_WARN(Message, ...)
+#define LOG_ERROR(Message, ...)
+#define LOG_CRITICAL(Message, ...)
+
+#endif
