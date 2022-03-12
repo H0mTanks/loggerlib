@@ -7,6 +7,7 @@
 //TODO: High precision time (atleast ms)
 //?Use less includes
 //TODO: Release build
+//TODO: Every call to logger functions must be through macros so they can be stripped out on release builds
 
 //!REMOVE THIS DEFINE BEFORE SHIPPING
 #define LOGGING
@@ -183,6 +184,7 @@ private:
 
         if (State::get_instance().curr_format.string) {
             char buffer_m[MESSAGE_LENGTH];
+            //!MESSAGE WILL BE CUT-OFF IF STRING AFTER FORMATTING IS GREATER THAN MESSAGE_LENGTH
             snprintf(buffer_m, MESSAGE_LENGTH, message, args...);
             ss << buffer_m << " \t";
         }
