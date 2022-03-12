@@ -3,11 +3,13 @@
 
 int main() {
     const char* name = "User";
-    LOG_INFO("Hello %s", name);
+    //LOG_INFO("Hello %s", name);
 
-    LOG_CRITICAL("OH NO!", name);
+    //LOG_CRITICAL("OH NO!", name);
 
-    LOG_WARN("Hello %d %d", 15, 28);
+    //LOG_WARN("Hello %d %d", 15, 28);
+
+    Logger::Output::info();
 
     return 0;
 }
