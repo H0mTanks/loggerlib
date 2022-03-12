@@ -51,11 +51,13 @@ struct StateStack {
 private:
     std::vector<State> logger_states;
 
-    StateStack() {
-        printf("Created StateStack\n");
-    }
 
 public:
+    StateStack() {
+        printf("Created StateStack\n");
+        logger_states.push_back(State());
+    }
+
     State const& top() {
         if (empty()) {
             assert(false);
@@ -75,7 +77,7 @@ public:
 
 thread_local StateStack state_stack;
 
-void set_priority(Priority new_priority) {
+void set_state(Priority new_priority) {
     Format new_format;
     if (state_stack.empty()) {
         new_format = {(unsigned char)Items::LEVEL | (unsigned char)Items::STRING};
@@ -86,7 +88,20 @@ void set_priority(Priority new_priority) {
 
     state_stack.push({new_priority, new_format});
 }
-//TODO: set format and set format and priority functions
+
+void set_state(Format new_format) {
+    Priority new_priority = Priority::INFO;
+    if (!state_stack.empty()) {
+        new_priority = state_stack.top().min_priority;
+    }
+
+    state_stack.push({new_priority, new_format});
+}
+
+void set_state(Priority new_priority, Format new_format) {
+    state_stack.push({new_priority, new_format});
+}
+
 
 struct Output {
 private:
@@ -99,14 +114,14 @@ public:
 
 private:
     Output() {
-        printf("Instance Created\n");
+        printf("Output Instance Created\n");
     }
 
     Output(Output const&) = delete;
     Output& operator=(Output const&) = delete;
 
     ~Output() {
-        printf("Instance destroyed");
+        printf("Output Instance destroyed");
     }
 
     static Output& get_instance() {
