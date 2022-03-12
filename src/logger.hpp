@@ -1,5 +1,13 @@
 #pragma once
 
+//TODO: Cross platform level colors
+//TODO: cout printing support
+//TODO: Dynamic message_length
+//TODO: File output
+//TODO: High precision time (atleast ms)
+//?Use less includes
+//TODO: Release build
+
 //!REMOVE THIS DEFINE BEFORE SHIPPING
 #define LOGGING
 
@@ -9,9 +17,12 @@
 #include <cassert>
 #include <ctime>
 #include <mutex>
-#include <vector>
+#include <sstream>
+#include <iostream>
+
 
 namespace Logger {
+constexpr int MESSAGE_LENGTH = 500;
 
 enum class Priority : unsigned char {
     TRACE = 0,
@@ -22,94 +33,108 @@ enum class Priority : unsigned char {
     CRITICAL,
 };
 
-enum class Items : unsigned char {
-    TIME = 0,
-    LEVEL,
-    STRING,
-    LINE,
-    FILE,
+enum Items : unsigned short {
+    TIME = 1 << 0,
+    LEVEL = 1 << 1,
+    STRING = 1 << 2,
+    LINE = 1 << 3,
+    FILE = 1 << 4,
 };
 
 union Format {
     struct {
-        unsigned char time : 1;
-        unsigned char level : 1;
-        unsigned char string : 1;
-        unsigned char line : 1;
-        unsigned char file : 1;
-        unsigned char unused : 3;
+        unsigned int time : 1;
+        unsigned int level : 1;
+        unsigned int string : 1;
+        unsigned int line : 1;
+        unsigned int file : 1;
+        unsigned int unused : 3;
     };
-    unsigned char print_state = 0;
+    unsigned int print_state = 0;
+
+    Format() : print_state(0) {}
+    Format(int ps) : print_state(ps) {}
 };
 
 struct State {
-    Priority min_priority = Priority::INFO;
-    Format curr_format = {((unsigned char)Items::LEVEL | (unsigned char)Items::STRING)};
-};
-
-struct StateStack {
 private:
-    std::vector<State> logger_states;
+    Priority min_priority = Priority::INFO;
+    Format curr_format = { Items::LEVEL | Items::STRING };
 
+    friend struct Output;
 
 public:
-    StateStack() {
-        printf("Created StateStack\n");
-        logger_states.push_back(State());
+    static void set_state(Priority new_priority) {
+        get_instance().min_priority = new_priority;
     }
 
-    State const& top() {
-        if (empty()) {
-            assert(false);
-        }
-
-        return logger_states[logger_states.size() - 1];
+    static void set_state(Format new_format) {
+        get_instance().curr_format = new_format;
     }
 
-    void push(State new_state) {
-        logger_states.push_back(new_state);
+    static void set_state(Priority new_priority, Format new_format) {
+        get_instance().curr_format = new_format;
+        get_instance().min_priority = new_priority;
     }
 
-    bool empty() {
-        return logger_states.empty();
+private:
+    State() {
+        std::cout << "Created state instance on thread " << std::this_thread::get_id << std::endl;
     }
+
+    State(State const&) = delete;
+    State& operator=(State const&) = delete;
+
+    ~State() {
+        std::cout << "Deleted state instance on thread " << std::this_thread::get_id << std::endl;
+    }
+
+    static State& get_instance() {
+        thread_local State state;
+        return state;
+    }
+
 };
-
-thread_local StateStack state_stack;
-
-void set_state(Priority new_priority) {
-    Format new_format;
-    if (state_stack.empty()) {
-        new_format = {(unsigned char)Items::LEVEL | (unsigned char)Items::STRING};
-    }
-    else {
-        new_format.print_state = state_stack.top().curr_format.print_state;
-    }
-
-    state_stack.push({new_priority, new_format});
-}
-
-void set_state(Format new_format) {
-    Priority new_priority = Priority::INFO;
-    if (!state_stack.empty()) {
-        new_priority = state_stack.top().min_priority;
-    }
-
-    state_stack.push({new_priority, new_format});
-}
-
-void set_state(Priority new_priority, Format new_format) {
-    state_stack.push({new_priority, new_format});
-}
 
 
 struct Output {
 private:
     std::mutex output_mutex;
 public:
-    //template<typename... Args>
-    static void info() {
-        get_instance().print();
+    template<typename... Args>
+    static void trace(int line, const char* source_file, const char* message, Args... args)
+    {
+        get_instance().print(line, source_file, "[Trc]\t", Logger::Priority::TRACE, message, args...);
+    }
+    
+    template<typename... Args>
+    static void debug(int line, const char* source_file, const char* message, Args... args)
+    {
+        get_instance().print(line, source_file, "[Dbg]\t", Logger::Priority::DEBUG, message, args...);
+    }
+
+    template<typename... Args>
+    static void info(int line, const char* source_file, const char* message, Args... args)
+    {
+        get_instance().print(line, source_file, "[Info]\t", Logger::Priority::INFO, message, args...);
+    }
+
+    template<typename... Args>
+    static void warn(int line, const char* source_file, const char* message, Args... args)
+    {
+        get_instance().print(line, source_file, "[Warn]\t", Logger::Priority::WARN, message, args...);
+    }
+
+    template<typename... Args>
+    static void error(int line, const char* source_file, const char* message, Args... args)
+    {
+        get_instance().print(line, source_file, "[Err]\t", Logger::Priority::ERROR, message, args...);
+    }
+
+    template<typename... Args>
+    static void critical(int line, const char* source_file, const char* message, Args... args)
+    {
+        get_instance().print(line, source_file, "[Crit]\t", Logger::Priority::CRITICAL, message, args...);
     }
 
 private:
@@ -129,10 +154,58 @@ private:
         return output;
     }
 
-    void print() {
+    template<typename... Args>
+    void print(int line_number, const char* source_file, const char* message_priority_str, Logger::Priority message_priority, const char* message, Args... args)
+    {
+        if (State::get_instance().min_priority > message_priority) {
+            return;
+        }
+
+        //printf("Using state instance: %llu\n", (unsigned long long)(&State::get_instance()));
+        //printf("Format: %d", State::get_instance().curr_format.print_state);
+        
+        // char buffer_fd[80];
+        // std::strftime(buffer_fd, 80, "%F %T", timestamp);
+
+        std::stringstream ss;
+        if (State::get_instance().curr_format.time) {
+            std::time_t current_time = std::time(0);
+            std::tm* timestamp = std::localtime(&current_time);
+            char buffer_time[40];
+            std::strftime(buffer_time, 80, "%T", timestamp);
+            
+            ss << buffer_time << " \t";
+        }
+
+        if (State::get_instance().curr_format.level) {
+            ss << message_priority_str << " ";
+        }
+
+        if (State::get_instance().curr_format.string) {
+            char buffer_m[MESSAGE_LENGTH];
+            snprintf(buffer_m, MESSAGE_LENGTH, message, args...);
+            ss << buffer_m << " \t";
+        }
+
+        if (State::get_instance().curr_format.line) {
+            ss << "on line number " << line_number << " in source file " << source_file;
+        }
+        ss << std::endl;
+
+        std::string output_string = ss.str();
+        
         output_mutex.lock();
-        printf("Hello\n");
+        printf(output_string.c_str());
         output_mutex.unlock();
+
+        // if (file)
+        // {
+        //     fprintf(file, "%s\t", buffer_fd);
+        //     fprintf(file, message_priority_str);
+        //     fprintf(file, message, args...);
+        //     fprintf(file, " on line %d in %s", line_number, source_file);
+        //     fprintf(file, "\n");
+        // }
     }
 };
 
@@ -341,18 +414,18 @@ private:
 
 // };
 
-// #define LOG_TRACE(Message, ...) (Logger::trace(__LINE__, __FILE__, Message, __VA_ARGS__))
-// #define LOG_DEBUG(Message, ...) (Logger::debug(__LINE__, __FILE__, Message, __VA_ARGS__))
-// #define LOG_INFO(Message, ...) (Logger::info(__LINE__, __FILE__, Message, __VA_ARGS__))
-// #define LOG_WARN(Message, ...) (Logger::warn(__LINE__, __FILE__, Message, __VA_ARGS__))
-// #define LOG_ERROR(Message, ...) (Logger::error(__LINE__, __FILE__, Message, __VA_ARGS__))
-// #define LOG_CRITICAL(Message, ...) (Logger::critical(__LINE__, __FILE__, Message, __VA_ARGS__))
-// #else
-// #define LOG_TRACE(Message, ...)
-// #define LOG_DEBUG(Message, ...)
-// #define LOG_INFO(Message, ...)
-// #define LOG_WARN(Message, ...)
-// #define LOG_ERROR(Message, ...)
-// #define LOG_CRITICAL(Message, ...)
+#define LOG_TRACE(Message, ...) (Logger::Output::trace(__LINE__, __FILE__, Message, __VA_ARGS__))
+#define LOG_DEBUG(Message, ...) (Logger::Output::debug(__LINE__, __FILE__, Message, __VA_ARGS__))
+#define LOG_INFO(Message, ...) (Logger::Output::info(__LINE__, __FILE__, Message, __VA_ARGS__))
+#define LOG_WARN(Message, ...) (Logger::Output::warn(__LINE__, __FILE__, Message, __VA_ARGS__))
+#define LOG_ERROR(Message, ...) (Logger::Output::error(__LINE__, __FILE__, Message, __VA_ARGS__))
+#define LOG_CRITICAL(Message, ...) (Logger::Output::critical(__LINE__, __FILE__, Message, __VA_ARGS__))
+#else
+#define LOG_TRACE(Message, ...)
+#define LOG_DEBUG(Message, ...)
+#define LOG_INFO(Message, ...)
+#define LOG_WARN(Message, ...)
+#define LOG_ERROR(Message, ...)
+#define LOG_CRITICAL(Message, ...)
 
 #endif
