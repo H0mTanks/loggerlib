@@ -1,10 +1,10 @@
 #include "logger.hpp"
-#include <iostream>
-#include <thread>
+
+#define color_red 15
 
 void print_test2() {
     const char* name = "User1";
-    Logger::State::set_state({ Logger::TIME | Logger::LEVEL | Logger::STRING });
+    LOGGER_STATEF({ Logger::TIME | Logger::LEVEL | Logger::STRING });
     LOG_INFO("Hello %s", name);
 
     LOG_CRITICAL("OH NO!", name);
@@ -14,7 +14,7 @@ void print_test2() {
 
 void print_test() {
     const char* name = "User1";
-    Logger::State::set_state({Logger::TIME | Logger::LEVEL | Logger::STRING | Logger::LINE});
+    LOGGER_STATEF({Logger::TIME | Logger::LEVEL | Logger::STRING | Logger::LINE});
     LOG_INFO("Hello %s", name);
 
     LOG_CRITICAL("OH NO!", name);
@@ -24,29 +24,31 @@ void print_test() {
 
 int main() {
     const char* name = "User";
-    //Logger::State::set_state({(Logger::Items::TIME | Logger::Items::LEVEL | Logger::Items::STRING | Logger::Items::LINE)});
+    LOG_TRACE("This is a trace");
+
+    LOG_DEBUG("This is a debug");
     LOG_INFO("Hello %s", name);
 
     LOG_CRITICAL("OH NO!", name);
 
     LOG_WARN("Hello %d %d", 15, 28);
+
+
+    printf("Hello default color\n");
 
     //print_test();
+    LOGGER_STATEP(Logger::Priority::TRACE);
+    LOG_TRACE("This is a trace");
 
-    std::cout << "-----------------" << std::endl;
-
-    std::thread t(print_test);
-    std::thread t2(print_test2);
-    t.join();
-    t2.join();
-
-    std::cout << "-----------------" << std::endl;
+    LOG_DEBUG("This is a debug");
 
     LOG_INFO("Hello %s", name);
 
     LOG_CRITICAL("OH NO!", name);
 
     LOG_WARN("Hello %d %d", 15, 28);
+
+    printf(STRINGIFY_EXPANDED(color_red));
 
     return 0;
 }
