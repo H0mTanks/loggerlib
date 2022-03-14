@@ -1,11 +1,12 @@
 #pragma once
 
 /////TODO: Cross platform level colors
-//TODO: cout printing support
+/////TODO: cout printing support
 //TODO: Dynamic message_length
 //TODO: Carry the state of the calling thread
 //TODO: File output
 //TODO: High precision time (atleast ms)
+//TODO: Abstract platform-specific code further
 //?Use less includes
 //TODO: Release build
 //TODO: Every call to logger functions must be through macros so they can be stripped out on release builds
@@ -16,18 +17,16 @@
 #define LOGGING
 #define LOGCOLOR
 
-#ifdef LOGGING
-
 #include <cstdio>
 #include <ctime>
-#include <mutex>
 #include <sstream>
+#include <mutex>
 
 #define STRINGIFY_EXPANDED(x) STRINGIFY_DEFINE(x)
 #define STRINGIFY_DEFINE(x) #x
 
+#ifdef LOGGING
 #ifdef LOGCOLOR
-
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -40,8 +39,9 @@
 #define color_critical_red       12 //critical
 #define color_warn_yellow    14 //warn
 #define color_default_white 15
-#include <Windows.h>
+#include <windows.h>
 #endif
+
 
 #ifdef __linux__
 #define LINUX_COLOR
@@ -97,10 +97,6 @@ struct State {
 private:
     Priority min_priority = Priority::INFO;
     Format curr_format = { Items::LEVEL | Items::STRING };
-    
-#ifdef WIN_COLOR
-    WORD default_colors = 0;
-#endif
 
     friend struct Output;
 
@@ -119,11 +115,7 @@ public:
     }
 
 private:
-    State() {
-#ifdef WIN_COLOR
-    get_console_defaults();
-#endif
-    }
+    State() {    }
 
     State(State const&) = delete;
     State& operator=(State const&) = delete;
@@ -136,21 +128,16 @@ private:
         return state;
     }
 
-#ifdef WIN_COLOR
-    void get_console_defaults() {
-        CONSOLE_SCREEN_BUFFER_INFO csbi;
-        if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi)) {
-            default_colors = csbi.wAttributes;
-        }
-    }
-#endif
-
 };
 
 
 struct Output {
 private:
     std::mutex output_mutex;
+#ifdef WIN_COLOR
+    WORD default_colors = 0;
+#endif
+
 public:
     template<typename... Args>
     static void trace(int line, const char* source_file, const char* message, Args... args)
@@ -188,10 +175,60 @@ public:
         get_instance().print(line, source_file, "[Crit]\t", Logger::Priority::CRITICAL, message, args...);
     }
 
+    template <typename... Args>
+    static void ctrace(int line, const char *source_file, Args... args)
+    {
+        get_instance().cprint(line, source_file, "[Trc]\t", Logger::Priority::TRACE, args...);
+    }
+
+    template <typename... Args>
+    static void cdebug(int line, const char *source_file, Args... args)
+    {
+        get_instance().cprint(line, source_file, "[Dbg]\t", Logger::Priority::DEBUG, args...);
+    }
+
+    template <typename... Args>
+    static void cinfo(int line, const char *source_file, Args... args)
+    {
+        get_instance().cprint(line, source_file, "[Info]\t", Logger::Priority::INFO, args...);
+    }
+
+    template <typename... Args>
+    static void cwarn(int line, const char *source_file, Args... args)
+    {
+        get_instance().cprint(line, source_file, "[Warn]\t", Logger::Priority::WARN, args...);
+    }
+
+    template <typename... Args>
+    static void cerror(int line, const char *source_file, Args... args)
+    {
+        get_instance().cprint(line, source_file, "[Err]\t", Logger::Priority::ERR, args...);
+    }
+
+    template <typename... Args>
+    static void ccritical(int line, const char *source_file, Args... args)
+    {
+        get_instance().cprint(line, source_file, "[Crit]\t", Logger::Priority::CRITICAL, args...);
+    }
+
 private:
     Output() {
+#ifdef WIN_COLOR
+        get_console_defaults();
+#endif
         printf("Output Instance Created\n");
     }
+
+#ifdef WIN_COLOR
+    void get_console_defaults()
+    {
+        CONSOLE_SCREEN_BUFFER_INFO csbi;
+        if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi))
+        {
+            default_colors = csbi.wAttributes;
+        }
+    }
+#endif
 
     Output(Output const&) = delete;
     Output& operator=(Output const&) = delete;
@@ -250,7 +287,7 @@ private:
 
 #endif
 
-        std::stringstream ss;
+        std::ostringstream ss;
 
 #ifdef LINUX_COLOR
         ss << "\033[";
@@ -320,10 +357,170 @@ private:
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), (WORD)(text_color));
 #endif
 
-        printf(output_string.c_str());
+        printf("%s", output_string.c_str());
 
 #ifdef WIN_COLOR
-        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), State::get_instance().default_colors);
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), default_colors);
+#endif
+
+        output_mutex.unlock();
+
+        // if (file)
+        // {
+        //     fprintf(file, "%s\t", buffer_fd);
+        //     fprintf(file, message_priority_str);
+        //     fprintf(file, message, args...);
+        //     fprintf(file, " on line %d in %s", line_number, source_file);
+        //     fprintf(file, "\n");
+        // }
+    }
+
+    template <typename T>
+    void push_into_sstream(std::ostream& ss, T item) {
+        ss << item << " ";
+    }
+
+    template <typename T, typename... Args>
+    void push_into_sstream(std::ostream& ss, T item, Args... args) {
+        push_into_sstream(ss, item);
+        push_into_sstream(ss, args...);
+    }
+
+    template <typename... Args>
+    void cprint(int line_number, const char *source_file, const char *message_priority_str, Logger::Priority message_priority, Args... args)
+    {
+        if (State::get_instance().min_priority > message_priority)
+        {
+            return;
+        }
+
+        // printf("Using state instance: %llu\n", (unsigned long long)(&State::get_instance()));
+        // printf("Format: %d", State::get_instance().curr_format.print_state);
+
+        // char buffer_fd[80];
+        // std::strftime(buffer_fd, 80, "%F %T", timestamp);
+
+#ifdef WIN_COLOR
+        int text_color = color_default_white;
+
+        switch (message_priority)
+        {
+        case Priority::TRACE:
+        {
+            text_color = color_trace_light_gray;
+            break;
+        }
+        case Priority::DEBUG:
+        {
+            text_color = color_debug_green;
+            break;
+        }
+        case Priority::INFO:
+        {
+            text_color = color_info_blue;
+            break;
+        }
+        case Priority::WARN:
+        {
+            text_color = color_warn_yellow;
+            break;
+        }
+        case Priority::ERR:
+        {
+            text_color = color_error_orange;
+            break;
+        }
+        case Priority::CRITICAL:
+        {
+            text_color = color_critical_red;
+            break;
+        }
+        }
+
+#endif
+
+        std::ostringstream ss;
+
+#ifdef LINUX_COLOR
+        ss << "\033[";
+        switch (message_priority)
+        {
+        case Priority::TRACE:
+        {
+            ss << STRINGIFY_EXPANDED(color_trace_light_gray);
+            break;
+        }
+        case Priority::DEBUG:
+        {
+            ss << STRINGIFY_EXPANDED(color_debug_green);
+            break;
+        }
+        case Priority::INFO:
+        {
+            ss << STRINGIFY_EXPANDED(color_info_blue);
+            break;
+        }
+        case Priority::WARN:
+        {
+            ss << STRINGIFY_EXPANDED(color_warn_yellow);
+            break;
+        }
+        case Priority::ERR:
+        {
+            ss << STRINGIFY_EXPANDED(color_error_orange);
+            break;
+        }
+        case Priority::CRITICAL:
+        {
+            ss << STRINGIFY_EXPANDED(color_critical_red);
+            break;
+        }
+        }
+        ss << "m";
+#endif
+
+        if (State::get_instance().curr_format.time)
+        {
+            std::time_t current_time = std::time(0);
+            std::tm *timestamp = std::localtime(&current_time);
+            char buffer_time[40];
+            std::strftime(buffer_time, 80, "%T", timestamp);
+
+            ss << buffer_time << " \t";
+        }
+
+        if (State::get_instance().curr_format.level)
+        {
+            ss << message_priority_str << " ";
+        }
+
+        if (State::get_instance().curr_format.string)
+        {
+            push_into_sstream(ss, args...);
+            ss << " \t";
+        }
+
+        if (State::get_instance().curr_format.line)
+        {
+            ss << "on line number " << line_number << " in source file " << source_file;
+        }
+
+#ifdef __linux__
+        ss << "\033[0m";
+#endif
+        ss << std::endl;
+
+        std::string output_string = ss.str();
+
+        output_mutex.lock();
+#ifdef WIN_COLOR
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), (WORD)(text_color));
+#endif
+
+        printf("%s", output_string.c_str());
+
+#ifdef WIN_COLOR
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), default_colors);
 #endif
 
         output_mutex.unlock();
@@ -341,15 +538,23 @@ private:
 
 }
 
-#define LOG_TRACE(Message, ...) (Logger::Output::trace(__LINE__, __FILE__, Message, __VA_ARGS__))
-#define LOG_DEBUG(Message, ...) (Logger::Output::debug(__LINE__, __FILE__, Message, __VA_ARGS__))
-#define LOG_INFO(Message, ...) (Logger::Output::info(__LINE__, __FILE__, Message, __VA_ARGS__))
-#define LOG_WARN(Message, ...) (Logger::Output::warn(__LINE__, __FILE__, Message, __VA_ARGS__))
-#define LOG_ERROR(Message, ...) (Logger::Output::error(__LINE__, __FILE__, Message, __VA_ARGS__))
-#define LOG_CRITICAL(Message, ...) (Logger::Output::critical(__LINE__, __FILE__, Message, __VA_ARGS__))
-#define LOGGER_STATEP(p) (Logger::State::set_state(p))
-#define LOGGER_STATEF(f) (Logger::State::set_state(f))
-#define LOGGER_STATEPF(p, f) (Logger::State::set_state(p, f))
+#define LOG_TRACE(Message, ...) (Logger::Output::trace(__LINE__, __FILE__, Message, ##__VA_ARGS__))
+#define LOG_DEBUG(Message, ...) (Logger::Output::debug(__LINE__, __FILE__, Message, ##__VA_ARGS__))
+#define LOG_INFO(Message, ...) (Logger::Output::info(__LINE__, __FILE__, Message, ##__VA_ARGS__))
+#define LOG_WARN(Message, ...) (Logger::Output::warn(__LINE__, __FILE__, Message, ##__VA_ARGS__))
+#define LOG_ERROR(Message, ...) (Logger::Output::error(__LINE__, __FILE__, Message, ##__VA_ARGS__))
+#define LOG_CRITICAL(Message, ...) (Logger::Output::critical(__LINE__, __FILE__, Message, ##__VA_ARGS__))
+
+#define CLOG_TRACE(...) (Logger::Output::ctrace(__LINE__, __FILE__, __VA_ARGS__))
+#define CLOG_DEBUG(...) (Logger::Output::cdebug(__LINE__, __FILE__, __VA_ARGS__))
+#define CLOG_INFO(...) (Logger::Output::cinfo(__LINE__, __FILE__, __VA_ARGS__))
+#define CLOG_WARN(...) (Logger::Output::cwarn(__LINE__, __FILE__, __VA_ARGS__))
+#define CLOG_ERROR(...) (Logger::Output::cerror(__LINE__, __FILE__, __VA_ARGS__))
+#define CLOG_CRITICAL(...) (Logger::Output::ccritical(__LINE__, __FILE__, __VA_ARGS__))
+
+#define LOGGER_PRIORITY(p) (Logger::State::set_state(p))
+#define LOGGER_FORMAT(f) (Logger::State::set_state(f))
+#define LOGGER_STATE(p, f) (Logger::State::set_state(p, f))
 
 #else
 #define LOG_TRACE(Message, ...)
@@ -358,8 +563,16 @@ private:
 #define LOG_WARN(Message, ...)
 #define LOG_ERROR(Message, ...)
 #define LOG_CRITICAL(Message, ...)
-#define LOGGER_STATEP(p)
-#define LOGGER_STATEF(f)
-#define LOGGER_STATEPF(p, f)
+
+#define CLOG_TRACE(Message, ...)
+#define CLOG_DEBUG(Message, ...)
+#define CLOG_INFO(Message, ...)
+#define CLOG_WARN(Message, ...)
+#define CLOG_ERROR(Message, ...)
+#define CLOG_CRITICAL(Message, ...)
+
+#define LOGGER_PRIORITY(p)
+#define LOGGER_FORMAT(f)
+#define LOGGER_STATE(p, f)
 
 #endif
