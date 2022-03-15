@@ -7,7 +7,7 @@
 //?Use less includes
 //TODO: Release build
 //TODO: Every call to logger functions must be through macros so they can be stripped out on release builds
-//TODO: fix out of order lock acquisition when two or more threads are waiting
+//? fix out of order lock acquisition when two or more threads are waiting
 //? Different thread for output object
 
 //!REMOVE THIS DEFINE BEFORE SHIPPING
