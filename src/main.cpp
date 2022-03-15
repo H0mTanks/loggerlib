@@ -1,8 +1,4 @@
 #include "logger.hpp"
-#include <sstream>
-#include <iostream>
-
-#define color_red 15
 
 void print_test2() {
     const char* name = "User1";
@@ -52,11 +48,8 @@ int main() {
 
     LOG_WARN("Hello %d %d", 15, 28);
 
-    //printf(STRINGIFY_EXPANDED(color_red));
-
     printf("\n");
 
-    CLOG_INFO("hello");
     CLOG_INFO(1, 2, 3, "hello", name, 76);
     CLOG_TRACE(1, 2, 3, "hello", name, 76);
     CLOG_WARN(1, 2, 3, "hello", name, 76);

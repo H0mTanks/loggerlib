@@ -1,9 +1,6 @@
 #pragma once
 
-/////TODO: Cross platform level colors
-/////TODO: cout printing support
-//TODO: Dynamic message_length
-//TODO: Carry the state of the calling thread
+//? Carry the state of the calling thread
 //TODO: File output
 //TODO: High precision time (atleast ms)
 //TODO: Abstract platform-specific code further
@@ -336,8 +333,16 @@ private:
         if (State::get_instance().curr_format.string) {
             char buffer_m[MESSAGE_LENGTH];
             //!MESSAGE WILL BE CUT-OFF IF STRING AFTER FORMATTING IS GREATER THAN MESSAGE_LENGTH
-            snprintf(buffer_m, MESSAGE_LENGTH, message, args...);
-            ss << buffer_m << " \t";
+            int size = snprintf(buffer_m, MESSAGE_LENGTH, message, args...);
+            if (size + 1 > MESSAGE_LENGTH) {
+                char* big_buffer = (char*)malloc((size + 1) * sizeof(char));
+                snprintf(big_buffer, size + 1, message, args...);
+                ss << big_buffer << " \t";
+                free(big_buffer);
+            }
+            else {
+                ss << buffer_m << " \t";
+            }
         }
 
         if (State::get_instance().curr_format.line) {
