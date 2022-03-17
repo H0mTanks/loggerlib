@@ -1,28 +1,8 @@
 #include "logger.hpp"
 
-void print_test2() {
-    const char* name = "User1";
-    LOGGER_FORMAT({ Logger::TIME | Logger::LEVEL | Logger::STRING });
-    LOG_INFO("Hello %s", name);
-
-    LOG_CRITICAL("OH NO!", name);
-
-    LOG_WARN("Hello %d %d", 15, 39);
-}
-
-void print_test() {
-    const char* name = "User1";
-    LOGGER_FORMAT({Logger::TIME | Logger::LEVEL | Logger::STRING | Logger::LINE});
-    LOG_INFO("Hello %s", name);
-
-    LOG_CRITICAL("OH NO!", name);
-
-    LOG_WARN("Hello %d %d", 15, 36);
-}
-
 int main() {
     const char* name = "User";
-    //LOGGER_FORMAT({ Logger::TIME | Logger::LEVEL | Logger::STRING | Logger::LINE });
+    LOGGER_FORMAT({ Logger::TIME | Logger::LEVEL | Logger::STRING | Logger::LINE });
 
     LOG_TRACE("This is a trace");
 

@@ -1,8 +1,8 @@
 #pragma once
 
 //? Carry the state of the calling thread
+//TODO: Full filename vs small
 //TODO: File output
-//TODO: High precision time (atleast ms)
 //TODO: Abstract platform-specific code further
 //?Use less includes
 //TODO: Release build
@@ -10,14 +10,14 @@
 //? fix out of order lock acquisition when two or more threads are waiting
 //? Different thread for output object
 
-//!REMOVE THIS DEFINE BEFORE SHIPPING
-#define LOGGING
-#define LOGCOLOR
-
 #include <cstdio>
 #include <ctime>
+#include <string.h>
+
 #include <sstream>
 #include <mutex>
+#include <chrono>
+#include <iomanip>
 
 #define STRINGIFY_EXPANDED(x) STRINGIFY_DEFINE(x)
 #define STRINGIFY_DEFINE(x) #x
@@ -239,18 +239,38 @@ private:
         return output;
     }
 
+    std::string time_in_HH_MM_SS_MMM_MMMM()
+    {
+        using namespace std::chrono;
+
+        // get current time
+        auto now = system_clock::now();
+
+        // get number of milliseconds for the current second
+        // (remainder after division into seconds)
+        auto ms = duration_cast<milliseconds>(now.time_since_epoch()) % 1000;
+        auto mksec = duration_cast<microseconds>(now.time_since_epoch()) % 1000;
+
+        // convert to std::time_t in order to convert to std::tm (broken time)
+        auto timer = system_clock::to_time_t(now);
+
+        // convert to broken time
+        std::tm bt = *std::localtime(&timer);
+
+        std::ostringstream oss;
+
+        oss << std::put_time(&bt, "%H:%M:%S"); // HH:MM:SS
+        oss << '.' << std::setfill('0') << std::setw(3) << ms.count() << "." << mksec.count();
+
+        return oss.str();
+    }
+
     template<typename... Args>
     void print(int line_number, const char* source_file, const char* message_priority_str, Logger::Priority message_priority, const char* message, Args... args)
     {
         if (State::get_instance().min_priority > message_priority) {
             return;
         }
-
-        //printf("Using state instance: %llu\n", (unsigned long long)(&State::get_instance()));
-        //printf("Format: %d", State::get_instance().curr_format.print_state);
-        
-        // char buffer_fd[80];
-        // std::strftime(buffer_fd, 80, "%F %T", timestamp);
 
 #ifdef WIN_COLOR
         int text_color = color_default_white;
@@ -317,13 +337,8 @@ private:
         ss << "m";
 #endif
 
-        if (State::get_instance().curr_format.time) {
-            std::time_t current_time = std::time(0);
-            std::tm* timestamp = std::localtime(&current_time);
-            char buffer_time[40];
-            std::strftime(buffer_time, 80, "%T", timestamp);
-            
-            ss << buffer_time << " \t";
+        if (State::get_instance().curr_format.time) {            
+            ss << time_in_HH_MM_SS_MMM_MMMM() << " \t";
         }
 
         if (State::get_instance().curr_format.level) {
@@ -486,12 +501,7 @@ private:
 
         if (State::get_instance().curr_format.time)
         {
-            std::time_t current_time = std::time(0);
-            std::tm *timestamp = std::localtime(&current_time);
-            char buffer_time[40];
-            std::strftime(buffer_time, 80, "%T", timestamp);
-
-            ss << buffer_time << " \t";
+            ss << time_in_HH_MM_SS_MMM_MMMM() << " \t";
         }
 
         if (State::get_instance().curr_format.level)
@@ -543,19 +553,21 @@ private:
 
 }
 
-#define LOG_TRACE(Message, ...) (Logger::Output::trace(__LINE__, __FILE__, Message, ##__VA_ARGS__))
-#define LOG_DEBUG(Message, ...) (Logger::Output::debug(__LINE__, __FILE__, Message, ##__VA_ARGS__))
-#define LOG_INFO(Message, ...) (Logger::Output::info(__LINE__, __FILE__, Message, ##__VA_ARGS__))
-#define LOG_WARN(Message, ...) (Logger::Output::warn(__LINE__, __FILE__, Message, ##__VA_ARGS__))
-#define LOG_ERROR(Message, ...) (Logger::Output::error(__LINE__, __FILE__, Message, ##__VA_ARGS__))
-#define LOG_CRITICAL(Message, ...) (Logger::Output::critical(__LINE__, __FILE__, Message, ##__VA_ARGS__))
+#define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
 
-#define CLOG_TRACE(...) (Logger::Output::ctrace(__LINE__, __FILE__, __VA_ARGS__))
-#define CLOG_DEBUG(...) (Logger::Output::cdebug(__LINE__, __FILE__, __VA_ARGS__))
-#define CLOG_INFO(...) (Logger::Output::cinfo(__LINE__, __FILE__, __VA_ARGS__))
-#define CLOG_WARN(...) (Logger::Output::cwarn(__LINE__, __FILE__, __VA_ARGS__))
-#define CLOG_ERROR(...) (Logger::Output::cerror(__LINE__, __FILE__, __VA_ARGS__))
-#define CLOG_CRITICAL(...) (Logger::Output::ccritical(__LINE__, __FILE__, __VA_ARGS__))
+#define LOG_TRACE(Message, ...) (Logger::Output::trace(__LINE__, __FILENAME__, Message, ##__VA_ARGS__))
+#define LOG_DEBUG(Message, ...) (Logger::Output::debug(__LINE__, __FILENAME__, Message, ##__VA_ARGS__))
+#define LOG_INFO(Message, ...) (Logger::Output::info(__LINE__, __FILENAME__, Message, ##__VA_ARGS__))
+#define LOG_WARN(Message, ...) (Logger::Output::warn(__LINE__, __FILENAME__, Message, ##__VA_ARGS__))
+#define LOG_ERROR(Message, ...) (Logger::Output::error(__LINE__, __FILENAME__, Message, ##__VA_ARGS__))
+#define LOG_CRITICAL(Message, ...) (Logger::Output::critical(__LINE__, __FILENAME__, Message, ##__VA_ARGS__))
+
+#define CLOG_TRACE(...) (Logger::Output::ctrace(__LINE__, __FILENAME__, __VA_ARGS__))
+#define CLOG_DEBUG(...) (Logger::Output::cdebug(__LINE__, __FILENAME__, __VA_ARGS__))
+#define CLOG_INFO(...) (Logger::Output::cinfo(__LINE__, __FILENAME__, __VA_ARGS__))
+#define CLOG_WARN(...) (Logger::Output::cwarn(__LINE__, __FILENAME__, __VA_ARGS__))
+#define CLOG_ERROR(...) (Logger::Output::cerror(__LINE__, __FILENAME__, __VA_ARGS__))
+#define CLOG_CRITICAL(...) (Logger::Output::ccritical(__LINE__, __FILENAME__, __VA_ARGS__))
 
 #define LOGGER_PRIORITY(p) (Logger::State::set_state(p))
 #define LOGGER_FORMAT(f) (Logger::State::set_state(f))

@@ -12,7 +12,7 @@ LIB_FILES = \
 
 C_FLAGS = /D_CRT_SECURE_NO_WARNINGS \
   /nologo \
-  /MD \
+  /MT \
   /Zi \
   /FC \
   /c \
@@ -23,8 +23,8 @@ C_FLAGS = /D_CRT_SECURE_NO_WARNINGS \
   /wd4505 /wd4200 /wd4201 /wd4100 /wd4189 /wd4312 \
   /std:c++14 \
   /Fd$(DIR_BIN)\ \
-  #/DLOGGING \
-  #/DLOGCOLOR \
+  /DLOGGING \
+  /DLOGCOLOR \
 
 
 #add _x86 to dir_bin and dir_inter for x86 compilation
@@ -39,7 +39,7 @@ $(EXECUTABLE_NAME) : $(DIR_INTERMEDIATE)\*.obj
   @echo.
   @echo Linking $(EXECUTABLE_NAME)
   @echo -----------------------------------------------
-  link /NODEFAULTLIB:LIBCMT /DEBUG:FULL /out:$(DIR_BIN)\$(EXECUTABLE_NAME) $(DIR_INTERMEDIATE)\*.obj $(LIB_FILES)
+  link /DEBUG:FULL /out:$(DIR_BIN)\$(EXECUTABLE_NAME) $(DIR_INTERMEDIATE)\*.obj $(LIB_FILES)
 
 # build application
 main: $(EXECUTABLE_NAME)
