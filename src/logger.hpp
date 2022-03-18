@@ -4,6 +4,7 @@
 //TODO: Full filename vs small
 //TODO: File output
 //TODO: Abstract platform-specific code further
+//TODO: date printing
 //?Use less includes
 //TODO: Release build
 //TODO: Every call to logger functions must be through macros so they can be stripped out on release builds
@@ -338,7 +339,7 @@ private:
 #endif
 
         if (State::get_instance().curr_format.time) {            
-            ss << time_in_HH_MM_SS_MMM_MMMM() << " \t";
+            ss << time_in_HH_MM_SS_MMM_MMMM() << "  \t";
         }
 
         if (State::get_instance().curr_format.level) {
@@ -501,7 +502,7 @@ private:
 
         if (State::get_instance().curr_format.time)
         {
-            ss << time_in_HH_MM_SS_MMM_MMMM() << " \t";
+            ss << time_in_HH_MM_SS_MMM_MMMM() << "  \t";
         }
 
         if (State::get_instance().curr_format.level)
