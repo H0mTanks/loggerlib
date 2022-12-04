@@ -9,12 +9,12 @@ int main() {
     LOG_DEBUG("This is a debug");
     LOG_INFO("Hello %s", name);
 
-    LOG_CRITICAL("OH NO!", name);
+    LOG_CRITICAL("OH NO!");
 
     LOG_WARN("Hello %d %d", 15, 28);
 
 
-    printf("Hello default color\n");
+    // printf("Hello default color\n");
 
     //print_test();
     LOGGER_PRIORITY(Logger::Priority::TRACE);
@@ -24,7 +24,7 @@ int main() {
 
     LOG_INFO("Hello %s", name);
 
-    LOG_CRITICAL("OH NO!", name);
+    LOG_CRITICAL("OH NO!");
 
     LOG_WARN("Hello %d %d", 15, 28);
 

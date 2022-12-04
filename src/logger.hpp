@@ -142,7 +142,7 @@ public:
     {
         get_instance().print(line, source_file, "[Trc]\t", Logger::Priority::TRACE, message, args...);
     }
-    
+
     template<typename... Args>
     static void debug(int line, const char* source_file, const char* message, Args... args)
     {
@@ -174,37 +174,37 @@ public:
     }
 
     template <typename... Args>
-    static void ctrace(int line, const char *source_file, Args... args)
+    static void ctrace(int line, const char* source_file, Args... args)
     {
         get_instance().cprint(line, source_file, "[Trc]\t", Logger::Priority::TRACE, args...);
     }
 
     template <typename... Args>
-    static void cdebug(int line, const char *source_file, Args... args)
+    static void cdebug(int line, const char* source_file, Args... args)
     {
         get_instance().cprint(line, source_file, "[Dbg]\t", Logger::Priority::DEBUG, args...);
     }
 
     template <typename... Args>
-    static void cinfo(int line, const char *source_file, Args... args)
+    static void cinfo(int line, const char* source_file, Args... args)
     {
         get_instance().cprint(line, source_file, "[Info]\t", Logger::Priority::INFO, args...);
     }
 
     template <typename... Args>
-    static void cwarn(int line, const char *source_file, Args... args)
+    static void cwarn(int line, const char* source_file, Args... args)
     {
         get_instance().cprint(line, source_file, "[Warn]\t", Logger::Priority::WARN, args...);
     }
 
     template <typename... Args>
-    static void cerror(int line, const char *source_file, Args... args)
+    static void cerror(int line, const char* source_file, Args... args)
     {
         get_instance().cprint(line, source_file, "[Err]\t", Logger::Priority::ERR, args...);
     }
 
     template <typename... Args>
-    static void ccritical(int line, const char *source_file, Args... args)
+    static void ccritical(int line, const char* source_file, Args... args)
     {
         get_instance().cprint(line, source_file, "[Crit]\t", Logger::Priority::CRITICAL, args...);
     }
@@ -276,28 +276,28 @@ private:
 #ifdef WIN_COLOR
         int text_color = color_default_white;
 
-        switch(message_priority) {
-            case Priority::TRACE : {
+        switch (message_priority) {
+            case Priority::TRACE: {
                 text_color = color_trace_light_gray;
                 break;
             }
-            case Priority::DEBUG : {
+            case Priority::DEBUG: {
                 text_color = color_debug_green;
                 break;
             }
-            case Priority::INFO : {
+            case Priority::INFO: {
                 text_color = color_info_blue;
                 break;
             }
-            case Priority::WARN : {
+            case Priority::WARN: {
                 text_color = color_warn_yellow;
                 break;
             }
-            case Priority::ERR : {
+            case Priority::ERR: {
                 text_color = color_error_orange;
                 break;
             }
-            case Priority::CRITICAL : {
+            case Priority::CRITICAL: {
                 text_color = color_critical_red;
                 break;
             }
@@ -338,7 +338,7 @@ private:
         ss << "m";
 #endif
 
-        if (State::get_instance().curr_format.time) {            
+        if (State::get_instance().curr_format.time) {
             ss << time_in_HH_MM_SS_MMM_MMMM() << "  \t";
         }
 
@@ -372,7 +372,7 @@ private:
 
         std::string output_string = ss.str();
 
-        
+
         output_mutex.lock();
 #ifdef WIN_COLOR
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), (WORD)(text_color));
@@ -408,7 +408,7 @@ private:
     }
 
     template <typename... Args>
-    void cprint(int line_number, const char *source_file, const char *message_priority_str, Logger::Priority message_priority, Args... args)
+    void cprint(int line_number, const char* source_file, const char* message_priority_str, Logger::Priority message_priority, Args... args)
     {
         if (State::get_instance().min_priority > message_priority)
         {
@@ -426,36 +426,36 @@ private:
 
         switch (message_priority)
         {
-        case Priority::TRACE:
-        {
-            text_color = color_trace_light_gray;
-            break;
-        }
-        case Priority::DEBUG:
-        {
-            text_color = color_debug_green;
-            break;
-        }
-        case Priority::INFO:
-        {
-            text_color = color_info_blue;
-            break;
-        }
-        case Priority::WARN:
-        {
-            text_color = color_warn_yellow;
-            break;
-        }
-        case Priority::ERR:
-        {
-            text_color = color_error_orange;
-            break;
-        }
-        case Priority::CRITICAL:
-        {
-            text_color = color_critical_red;
-            break;
-        }
+            case Priority::TRACE:
+            {
+                text_color = color_trace_light_gray;
+                break;
+            }
+            case Priority::DEBUG:
+            {
+                text_color = color_debug_green;
+                break;
+            }
+            case Priority::INFO:
+            {
+                text_color = color_info_blue;
+                break;
+            }
+            case Priority::WARN:
+            {
+                text_color = color_warn_yellow;
+                break;
+            }
+            case Priority::ERR:
+            {
+                text_color = color_error_orange;
+                break;
+            }
+            case Priority::CRITICAL:
+            {
+                text_color = color_critical_red;
+                break;
+            }
         }
 
 #endif
@@ -466,36 +466,36 @@ private:
         ss << "\033[";
         switch (message_priority)
         {
-        case Priority::TRACE:
-        {
-            ss << STRINGIFY_EXPANDED(color_trace_light_gray);
-            break;
-        }
-        case Priority::DEBUG:
-        {
-            ss << STRINGIFY_EXPANDED(color_debug_green);
-            break;
-        }
-        case Priority::INFO:
-        {
-            ss << STRINGIFY_EXPANDED(color_info_blue);
-            break;
-        }
-        case Priority::WARN:
-        {
-            ss << STRINGIFY_EXPANDED(color_warn_yellow);
-            break;
-        }
-        case Priority::ERR:
-        {
-            ss << STRINGIFY_EXPANDED(color_error_orange);
-            break;
-        }
-        case Priority::CRITICAL:
-        {
-            ss << STRINGIFY_EXPANDED(color_critical_red);
-            break;
-        }
+            case Priority::TRACE:
+            {
+                ss << STRINGIFY_EXPANDED(color_trace_light_gray);
+                break;
+            }
+            case Priority::DEBUG:
+            {
+                ss << STRINGIFY_EXPANDED(color_debug_green);
+                break;
+            }
+            case Priority::INFO:
+            {
+                ss << STRINGIFY_EXPANDED(color_info_blue);
+                break;
+            }
+            case Priority::WARN:
+            {
+                ss << STRINGIFY_EXPANDED(color_warn_yellow);
+                break;
+            }
+            case Priority::ERR:
+            {
+                ss << STRINGIFY_EXPANDED(color_error_orange);
+                break;
+            }
+            case Priority::CRITICAL:
+            {
+                ss << STRINGIFY_EXPANDED(color_critical_red);
+                break;
+            }
         }
         ss << "m";
 #endif
