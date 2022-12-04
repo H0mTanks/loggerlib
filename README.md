@@ -34,12 +34,13 @@ The logger's priority level will make it ignore printing all the logs below the 
 For eg. `LOGGER_PRIORITY(Logger::Priority::WARN);`
 will ignore all logs of the priority level below warn (info, debug, trace)
 
-####Priority Enum values
-`Logger::Priority::TRACE`
-`Logger::Priority::DEBUG`
-`Logger::Priority::INFO`
-`Logger::Priority::WARN`
-`Logger::Priority::ERR`
+#### Priority Enum values
+
+`Logger::Priority::TRACE`\
+`Logger::Priority::DEBUG`\
+`Logger::Priority::INFO`\
+`Logger::Priority::WARN`\
+`Logger::Priority::ERR`\
 `Logger::Priority::CRITICAL`
 
 ### Print format
@@ -56,10 +57,10 @@ where we can see the timestamp, the log level, the string passed in, and the lin
 
 #### Format values
 
-`Logger::TIME`
-`Logger::LEVEL`
-`Logger::STRING`
-`Logger::LINE`
+`Logger::TIME`\
+`Logger::LEVEL`\
+`Logger::STRING`\
+`Logger::LINE`\
 `Logger::FILE` (WIP file writing)
 
 Please note that the format and priority state is `thread_local` so different threads can output different kinds of logs.
@@ -67,30 +68,30 @@ Please note that the format and priority state is `thread_local` so different th
 ### Calling Syntax
 
 loggerlib supports printf style formatting:
-`const char* name = "User"`
-`LOG_INFO("Hello %s", name);`
+`const char* name = "User"`\
+`LOG_INFO("Hello %s", name);`\
 prints
 ![printf](./screens/printf.png "printf")
 
 loggerlib also supports comma separated style formatting:
-`CLOG_DEBUG(1, 2, 3, "hello", name, 76);`
+`CLOG_DEBUG(1, 2, 3, "hello", name, 76);`\
 prints
 ![debug](./screens/debug.png "debug")
 
 #### Macros for printf style
 
-`LOG_TRACE(FormatString, ...)`
-`LOG_DEBUG(FormatString, ...)`
-`LOG_INFO(FormatString, ...)`
-`LOG_WARN(FormatString, ...)`
-`LOG_ERROR(FormatString, ...)`
+`LOG_TRACE(FormatString, ...)`\
+`LOG_DEBUG(FormatString, ...)`\
+`LOG_INFO(FormatString, ...)`\
+`LOG_WARN(FormatString, ...)`\
+`LOG_ERROR(FormatString, ...)`\
 `LOG_CRITICAL(FormatString, ...)`
 
 #### Macros for comma separated style
 
-`CLOG_TRACE(Comma separated params)`
-`CLOG_DEBUG(Comma separated params)`
-`CLOG_INFO(Comma separated params)`
-`CLOG_WARN(Comma separated params)`
-`CLOG_ERROR(Comma separated params)`
+`CLOG_TRACE(Comma separated params)`\
+`CLOG_DEBUG(Comma separated params)`\
+`CLOG_INFO(Comma separated params)`\
+`CLOG_WARN(Comma separated params)`\
+`CLOG_ERROR(Comma separated params)`\
 `CLOG_CRITICAL(Comma separated params)`
