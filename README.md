@@ -67,15 +67,15 @@ Please note that the format and priority state is `thread_local` so different th
 
 ### Calling Syntax
 
-loggerlib supports printf style formatting:
+loggerlib supports printf style formatting:\
 `const char* name = "User"`\
 `LOG_INFO("Hello %s", name);`\
-prints
+prints\
 ![printf](./screens/printf.png "printf")
 
-loggerlib also supports comma separated style formatting:
+loggerlib also supports comma separated style formatting:\
 `CLOG_DEBUG(1, 2, 3, "hello", name, 76);`\
-prints
+prints\
 ![debug](./screens/debug.png "debug")
 
 #### Macros for printf style
